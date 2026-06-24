@@ -2,8 +2,7 @@ description: AMU device driver
 
 compatible: "aerospace,amu"
 
-# FILL IN: include bus binding if the device sits on a bus, e.g.:
-# include: i2c-device.yaml
+include: i2c-device.yaml
 
-properties:
+# properties:
   # FILL IN: devicetree properties (mirror struct amu_config fields)

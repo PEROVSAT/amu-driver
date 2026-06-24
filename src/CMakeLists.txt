@@ -1,5 +1,6 @@
 zephyr_library()
 zephyr_library_include_directories(.)
+zephyr_include_directories(.)
 zephyr_library_sources(amu.c)
 zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE hardware_transfer.c)
 zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_SIMULATION simulation_transfer.c)

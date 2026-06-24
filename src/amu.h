@@ -2,26 +2,42 @@
 
 #define BOOT_STAGE    POST_KERNEL
 #define BOOT_PRIORITY 100
+#define IV_POINTS     40
 // Put any other definitions here
 
 #include <zephyr/device.h>
 
 #if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
-#include "amu_lib.h"
+	#include "amu_lib.h"
 #endif
 
-// This is the public API definition
-struct amu_driver_api {
-	// Add function definitions like
-	// int (*read_sensor)(const struct device *dev, uint8_t *val);
-};
+typedef struct {
+	float tsensor_start;
+	float tsensor_end;
+	uint32_t time_start;
+	uint32_t time_end;
+	float voltage[IV_POINTS];
+	float current[IV_POINTS];
+} iv_sweep_t;
+
+// Since this driver is so direct, we are skipping doing the whole API struct,
+// 	and just declaring this as a public function
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int amu_do_iv_sweep(const struct device *dev, iv_sweep_t *sweep);
+
+#ifdef __cplusplus
+}
+#endif
 
 // Static config data, filled at init
 struct amu_config {
 	// Mirror the devicetree properties here
 
 #if defined(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE)
-	// Add bus spec here
+	struct i2c_dt_spec bus;
 #endif
 };
 
@@ -30,6 +46,6 @@ struct amu_data {
 	// Things like cached samples go here
 
 #if defined(CONFIG_PEROVSAT_AMU_BACKEND_SIMULATION)
-	// Define things like a socket fd
+	// TODO: socket fd
 #endif
 };
