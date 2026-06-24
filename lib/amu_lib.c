@@ -1,10 +1,10 @@
-#include "__DRIVER_SLUG___lib.h"
+#include "amu_lib.h"
 
 #include <errno.h>
 
 /* FILL IN: register addresses and protocol constants */
 
-int __DRIVER_SLUG___lib_init(__DRIVER_SLUG___transfer_fn transfer, void *ctx)
+int amu_lib_init(amu_transfer_fn transfer, void *ctx)
 {
 	if (transfer == NULL) {
 		return -EINVAL;
@@ -19,7 +19,7 @@ int __DRIVER_SLUG___lib_init(__DRIVER_SLUG___transfer_fn transfer, void *ctx)
 
 /* FILL IN: protocol functions, e.g.:
  *
- * int __DRIVER_SLUG___lib_read_reg(__DRIVER_SLUG___transfer_fn transfer, void *ctx,
+ * int amu_lib_read_reg(amu_transfer_fn transfer, void *ctx,
  *                                  uint8_t reg, uint8_t *val)
  * {
  *     if (val == NULL) {
