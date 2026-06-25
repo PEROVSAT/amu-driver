@@ -4,5 +4,10 @@ compatible: "aerospace,amu"
 
 include: i2c-device.yaml
 
-# properties:
-  # FILL IN: devicetree properties (mirror struct amu_config fields)
+properties:
+  "#io-channel-cells":
+    type: int
+    const: 1
+
+io-channel-cells:
+  - input

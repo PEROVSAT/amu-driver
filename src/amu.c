@@ -13,13 +13,13 @@ LOG_MODULE_REGISTER(amu, CONFIG_LOG_DEFAULT_LEVEL);
 
 // Public API functions declared in amu.h are implemented here
 
-int amu_do_iv_sweep(const struct device *dev, iv_sweep_t *sweep)
+int amu_do_iv_sweep(const struct amu_dt_spec *spec, iv_sweep_t *sweep)
 {
 #if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
 	// return amu_lib_read_sensor(amu_transfer, dev, val);
 	return 0; // Library not implemented
 #else
-	ARG_UNUSED(dev);
+	ARG_UNUSED(spec);
 
 	sweep->tsensor_start = 20.0f;
 	sweep->tsensor_end = 25.0f;
@@ -55,8 +55,8 @@ static int amu_init(const struct device *dev)
 
 #define AMU_INIT(inst)                                                                             \
 	static struct amu_data amu_data_##inst;                                                    \
-	static const struct amu_config amu_config_##inst = {IF_ENABLED(CONFIG_PEROVSAT_MPU6050_BACKEND_HARDWARE,                                 \
-			   (.bus = I2C_DT_SPEC_INST_GET(inst),)) };    \
+	static const struct amu_config amu_config_##inst = {IF_ENABLED(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE,                                 \
+			   (.bus = I2C_DT_SPEC_INST_GET(inst),)) };        \
 	DEVICE_DT_INST_DEFINE(inst, amu_init, NULL, &amu_data_##inst, &amu_config_##inst,          \
 			      BOOT_STAGE, BOOT_PRIORITY, NULL);
 
