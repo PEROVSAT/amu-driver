@@ -2,24 +2,15 @@
 
 #define BOOT_STAGE    POST_KERNEL
 #define BOOT_PRIORITY 100
-#define IV_POINTS     40
-// Put any other definitions here
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
-#if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
-	#include "amu_lib.h"
+#if defined(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE)
+	#include <zephyr/drivers/i2c.h>
 #endif
 
-typedef struct {
-	float tsensor_start;
-	float tsensor_end;
-	uint32_t time_start;
-	uint32_t time_end;
-	float voltage[IV_POINTS];
-	float current[IV_POINTS];
-} iv_sweep_t;
+#include "amu_lib.h"
 
 // DeviceTree spec used to access a specific cell
 struct amu_dt_spec {

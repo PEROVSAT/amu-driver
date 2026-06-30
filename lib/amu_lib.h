@@ -1,21 +1,34 @@
 #pragma once
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+
+#ifndef IV_POINTS
+	#define IV_POINTS 40
+#endif
+
+typedef struct {
+	float tsensor_start;
+	float tsensor_end;
+	uint32_t time_start;
+	uint32_t time_end;
+	float voltage[IV_POINTS];
+	float current[IV_POINTS];
+} iv_sweep_t;
+
+/* * Dependency Injection callbacks
+ * ctx is passed transparently to allow your driver to inject the `amu_dt_spec`
+ */
+typedef int (*amu_transfer_fn_t)(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read);
+typedef void (*amu_delay_fn_t)(uint32_t ms);
 
 /**
- * Bus-agnostic byte transfer callback.
- *
- * @param ctx  Opaque context (typically the Zephyr device pointer).
- * @param reg  Register address or protocol offset.
- * @param buf  Data buffer.
- * @param len  Length of @p buf.
- * @param read true for read, false for write.
- *
- * @return 0 on success, negative errno on failure.
+ * @brief Orchestrates an IV sweep and parses the hardware memory map into iv_sweep_t
+ * @return 0 on success, < 0 on hardware/transfer failure, -2 on timeout
  */
-typedef int (*amu_transfer_fn)(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read);
+int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, void *ctx, amu_delay_fn_t delay,
+			iv_sweep_t *sweep);
 
 /**
  * Probe the device and apply initial configuration.
@@ -28,10 +41,4 @@ typedef int (*amu_transfer_fn)(void *ctx, uint8_t reg, uint8_t *buf, size_t len,
  *
  * @return 0 on success, negative errno on failure.
  */
-int amu_lib_init(amu_transfer_fn transfer, void *ctx);
-
-/* FILL IN: declare protocol functions, e.g.:
- *
- * int amu_lib_read_reg(amu_transfer_fn transfer, void *ctx,
- *                                  uint8_t reg, uint8_t *val);
- */
+int amu_lib_init(amu_transfer_fn_t transfer, void *ctx);
