@@ -9,5 +9,47 @@ properties:
     type: int
     const: 1
 
+  amu-type:
+    type: int
+    description: Sweep type byte written to the AMU config register. 0 = use EEPROM value.
+
+  amu-delay:
+    type: int
+    description: Inter-point delay value written to the AMU config register. 0 = use EEPROM value.
+
+  amu-ratio:
+    type: int
+    description: Ratio value written to the AMU config register. 0 = use EEPROM value.
+
+  amu-power:
+    type: int
+    description: Power value written to the AMU config register. 0 = use EEPROM value.
+
+  amu-dac-gain:
+    type: int
+    description: DAC gain written to the AMU config register. 0 = use EEPROM value.
+
+  amu-sweep-averages:
+    type: int
+    description: Number of sweep averages written to the AMU config register. 0 = use EEPROM value.
+
+  amu-adc-averages:
+    type: int
+    description: Number of ADC averages written to the AMU config register. 0 = use EEPROM value.
+
+  amu-am0-mw:
+    type: int
+    description: >
+      AM0 reference irradiance in mW/m² (e.g. 1366100 for 1366.1 W/m²).
+      The driver divides this by 1000.0 before writing to the hardware register.
+      0 = use EEPROM value.
+
+  amu-area-ucm2:
+    type: int
+    description: >
+      Solar cell area in µcm² (e.g. 10000 for 1.0 cm²).
+      The driver divides this by 10000.0 before writing to the hardware register.
+      0 = use EEPROM value.
+
 io-channel-cells:
   - input
