@@ -11,7 +11,7 @@
 
 LOG_MODULE_DECLARE(amu);
 
-int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
+int amu_transfer(const void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
 {
 	const struct device *dev = ctx;
 	const struct amu_config *config = dev->config;

@@ -12,24 +12,13 @@
 
 #include "amu_lib.h"
 
-// DeviceTree spec used to access a specific cell
-struct amu_dt_spec {
-	const struct device *dev;
-	uint8_t channel;
-};
-
-// Macro to grab the correct AMU devce and channel from a cell definition in the DeviceTree
-#define AMU_DT_SPEC_GET(node_id)                                                                   \
-	{.dev = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(node_id)),                                       \
-	 .channel = DT_IO_CHANNELS_INPUT(node_id)}
-
 // Since this driver is so direct, we are skipping doing the whole API struct,
 // 	and just declaring this as a public function
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int amu_do_iv_sweep(const struct amu_dt_spec *spec, iv_sweep_t *sweep);
+int amu_do_iv_sweep(const struct device *dev, iv_sweep_t *sweep);
 
 /**
  * @brief Set the I2C address of an AMU device.
@@ -38,12 +27,12 @@ int amu_do_iv_sweep(const struct amu_dt_spec *spec, iv_sweep_t *sweep);
  * address is not persisted to EEPROM; call amu_save_config_to_eeprom
  * afterward if persistence is required.
  *
- * @param spec  AMU device and channel spec.
+ * @param dev   AMU Zephyr device instance.
  * @param addr  New 7-bit I2C address.
  *
  * @return 0 on success, negative errno on failure.
  */
-int amu_set_address(const struct amu_dt_spec *spec, uint8_t addr);
+int amu_set_address(const struct device *dev, uint8_t addr);
 
 #ifdef __cplusplus
 }

@@ -17,7 +17,7 @@ struct device;
  *
  * @return 0 on success, negative errno on failure.
  */
-int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read);
+int amu_transfer(const void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read);
 
 /**
  * Initialize transport for this device instance.

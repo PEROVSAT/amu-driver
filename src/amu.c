@@ -17,23 +17,23 @@ static void amu_delay(uint32_t ms)
 	k_msleep(ms);
 }
 
-int amu_set_address(const struct amu_dt_spec *spec, uint8_t addr)
+int amu_set_address(const struct device *dev, uint8_t addr)
 {
 #if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
-	return amu_lib_set_address(amu_transfer, (void *)spec->dev, addr, amu_delay);
+	return amu_lib_set_address(amu_transfer, (void *)dev, addr, amu_delay);
 #else
-	ARG_UNUSED(spec);
+	ARG_UNUSED(dev);
 	ARG_UNUSED(addr);
 	return 0;
 #endif
 }
 
-int amu_do_iv_sweep(const struct amu_dt_spec *spec, iv_sweep_t *sweep)
+int amu_do_iv_sweep(const struct device *dev, iv_sweep_t *sweep)
 {
 #if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
-	return amu_lib_do_iv_sweep(amu_transfer, (void *)spec->dev, amu_delay, sweep);
+	return amu_lib_do_iv_sweep(amu_transfer, (void *)dev, amu_delay, sweep);
 #else
-	ARG_UNUSED(spec);
+	ARG_UNUSED(dev);
 
 	sweep->tsensor_start = 20.0f;
 	sweep->tsensor_end = 25.0f;

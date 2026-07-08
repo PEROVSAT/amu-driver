@@ -13,7 +13,7 @@
 
 LOG_MODULE_DECLARE(amu);
 
-static int amu_wait_for_ready(amu_transfer_fn_t transfer, void *ctx, uint16_t interval_ms,
+static int amu_wait_for_ready(amu_transfer_fn_t transfer, const void *ctx, uint16_t interval_ms,
 			      uint16_t timeout_ms, amu_delay_fn_t delay)
 {
 	uint8_t cmd_val = 0xFF;
@@ -45,7 +45,7 @@ static void amu_log_sweep_config(const char *label, const amu_ivsweep_config_t *
 		(long)(cfg->area * 10000.0f));
 }
 
-int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, void *ctx, amu_delay_fn_t delay,
+int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, const void *ctx, amu_delay_fn_t delay,
 			iv_sweep_t *sweep)
 {
 	if (!transfer || !sweep) {
@@ -119,7 +119,8 @@ int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, void *ctx, amu_delay_fn_t de
 	return 0;
 }
 
-int amu_lib_set_address(amu_transfer_fn_t transfer, void *ctx, uint8_t addr, amu_delay_fn_t delay)
+int amu_lib_set_address(amu_transfer_fn_t transfer, const void *ctx, uint8_t addr,
+			amu_delay_fn_t delay)
 {
 	if (!transfer || !delay) {
 		return -EINVAL;
@@ -144,7 +145,7 @@ int amu_lib_set_address(amu_transfer_fn_t transfer, void *ctx, uint8_t addr, amu
 	return 0;
 }
 
-int amu_lib_apply_config(amu_transfer_fn_t transfer, void *ctx, const amu_sweep_cfg_t *cfg,
+int amu_lib_apply_config(amu_transfer_fn_t transfer, const void *ctx, const amu_sweep_cfg_t *cfg,
 			 amu_delay_fn_t delay)
 {
 	if (!cfg) {
@@ -233,7 +234,7 @@ int amu_lib_apply_config(amu_transfer_fn_t transfer, void *ctx, const amu_sweep_
 	return 0;
 }
 
-int amu_lib_init(amu_transfer_fn_t transfer, void *ctx)
+int amu_lib_init(amu_transfer_fn_t transfer, const void *ctx)
 {
 	if (!transfer) {
 		return -EINVAL;
@@ -249,9 +250,10 @@ int amu_lib_init(amu_transfer_fn_t transfer, void *ctx)
 
 	// 0x00 or 0xFF indicates a floating bus or disconnected device.
 	// Valid hardware revisions in amu_types.h are defined (e.g., 0x10, 0x20, 0x30).
-	if (hw_rev == 0x00 || hw_rev == 0xFF) {
-		return -ENODEV;
-	}
+	// Temp. disabled after new AMU firmware
+	// if (hw_rev == 0x00 || hw_rev == 0xFF) {
+	// 	return -ENODEV;
+	// }
 
 	return 0;
 }

@@ -50,16 +50,16 @@ typedef struct {
 } amu_sweep_cfg_t;
 
 /* * Dependency Injection callbacks
- * ctx is passed transparently to allow your driver to inject the `amu_dt_spec`
+ * ctx is passed transparently to allow your driver to inject the Zephyr device pointer
  */
-typedef int (*amu_transfer_fn_t)(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read);
+typedef int (*amu_transfer_fn_t)(const void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read);
 typedef void (*amu_delay_fn_t)(uint32_t ms);
 
 /**
  * @brief Orchestrates an IV sweep and parses the hardware memory map into iv_sweep_t
  * @return 0 on success, < 0 on hardware/transfer failure, -2 on timeout
  */
-int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, void *ctx, amu_delay_fn_t delay,
+int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, const void *ctx, amu_delay_fn_t delay,
 			iv_sweep_t *sweep);
 
 /**
@@ -76,7 +76,8 @@ int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, void *ctx, amu_delay_fn_t de
  *
  * @return 0 on success, negative errno on failure.
  */
-int amu_lib_set_address(amu_transfer_fn_t transfer, void *ctx, uint8_t addr, amu_delay_fn_t delay);
+int amu_lib_set_address(amu_transfer_fn_t transfer, const void *ctx, uint8_t addr,
+			amu_delay_fn_t delay);
 
 /**
  * @brief Write sweep configuration registers from an amu_sweep_cfg_t.
@@ -91,7 +92,7 @@ int amu_lib_set_address(amu_transfer_fn_t transfer, void *ctx, uint8_t addr, amu
  *
  * @return 0 on success, negative errno on failure.
  */
-int amu_lib_apply_config(amu_transfer_fn_t transfer, void *ctx, const amu_sweep_cfg_t *cfg,
+int amu_lib_apply_config(amu_transfer_fn_t transfer, const void *ctx, const amu_sweep_cfg_t *cfg,
 			 amu_delay_fn_t delay);
 
 /**
@@ -105,4 +106,4 @@ int amu_lib_apply_config(amu_transfer_fn_t transfer, void *ctx, const amu_sweep_
  *
  * @return 0 on success, negative errno on failure.
  */
-int amu_lib_init(amu_transfer_fn_t transfer, void *ctx);
+int amu_lib_init(amu_transfer_fn_t transfer, const void *ctx);
