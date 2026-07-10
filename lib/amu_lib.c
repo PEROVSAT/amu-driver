@@ -248,12 +248,12 @@ int amu_lib_init(amu_transfer_fn_t transfer, const void *ctx)
 		return ret; // I2C Bus or transfer error
 	}
 
+	LOG_INF("Received %d from hardware revision register", hw_rev);
+
 	// 0x00 or 0xFF indicates a floating bus or disconnected device.
-	// Valid hardware revisions in amu_types.h are defined (e.g., 0x10, 0x20, 0x30).
-	// Temp. disabled after new AMU firmware
-	// if (hw_rev == 0x00 || hw_rev == 0xFF) {
-	// 	return -ENODEV;
-	// }
+	if (hw_rev == 0x00 || hw_rev == 0xFF) {
+		return -ENODEV;
+	}
 
 	return 0;
 }

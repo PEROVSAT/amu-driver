@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_SIMULATION
 			     ${amu_LIB}/amu_lib.c)
 zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_LIBRARY_MOCK
 			     ${amu_LIB}/amu_lib.c)
-zephyr_include_directories_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE     ${amu_LIB})
-zephyr_include_directories_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_SIMULATION   ${amu_LIB})
-zephyr_include_directories_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_LIBRARY_MOCK ${amu_LIB})
+# amu_lib.h declares iv_sweep_t, which amu.h's public API needs regardless of
+# backend, so this include path is always exposed even though amu_lib.c
+# (the NDA-restricted implementation) is only compiled for the backends above.
+zephyr_include_directories(${amu_LIB})
