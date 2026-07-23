@@ -7,3 +7,5 @@
 #define CMD_SWEEP_TRIG_SWEEP  0x42
 #define CMD_SWEEP_CONFIG_SAVE 0x45
 #define CMD_SET_ADDRESS       0x03
+#define CMD_DAC_STATE         0x50
+#define CMD_DAC_VOLTAGE       0x53

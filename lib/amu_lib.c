@@ -116,6 +116,38 @@ int amu_lib_do_iv_sweep(amu_transfer_fn_t transfer, const void *ctx, amu_delay_f
 		return ret;
 	}
 
+	// DAC setting section
+	// To keep it under max load, we can just uses the vmax from the sweep
+
+	// Load voltage parameter
+	float dac_v = meta.vmax;
+	ret = transfer(ctx, AMU_REG_TRANSFER_PTR, (uint8_t *)&dac_v, sizeof(dac_v), false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	// Issue DAC set voltage command
+	cmd_val = (uint8_t)CMD_DAC_VOLTAGE;
+	ret = transfer(ctx, AMU_REG_CMD, &cmd_val, 1, false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	delay(10); // Let it cook    TODO: Test if we can delete this
+
+	// DAC Enabled state is 1
+	uint8_t dac_state = 1;
+	ret = transfer(ctx, AMU_REG_TRANSFER_PTR, &dac_state, sizeof(dac_state), false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	cmd_val = (uint8_t)CMD_DAC_STATE;
+	ret = transfer(ctx, AMU_REG_CMD, &cmd_val, 1, false);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -254,6 +286,13 @@ int amu_lib_init(amu_transfer_fn_t transfer, const void *ctx)
 	if (hw_rev == 0x00 || hw_rev == 0xFF) {
 		return -ENODEV;
 	}
+
+	// TODO: Consider setting the DAC here as well
+	// This would avoid a failure case where we restart mid sweep the the cell isn't under load
+	// until we do another sweep. Isn't ideal for degradation
+
+	// Since we don't know what the last vmax was, we'd just probably want to set it to 0V
+	// (short circuit) so there isn't any charge buildup in the cell
 
 	return 0;
 }
