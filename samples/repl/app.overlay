@@ -1,10 +1,10 @@
 / {
 	aliases {
-		__DRIVER_SLUG__ = &__DRIVER_SLUG___0;
+		amu = &amu_0;
 	};
 
-	__DRIVER_SLUG___0: __DRIVER_SLUG__ {
-		compatible = "__COMPAT__";
+	amu_0: amu {
+		compatible = "aerospace,amu";
 		status = "okay";
 	};
 };

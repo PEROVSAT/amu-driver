@@ -1,5 +1,5 @@
 tests:
-  __MODULE_NAME__.unit:
+  amu-driver.unit:
     tags:
       - drivers
     platform_allow:
