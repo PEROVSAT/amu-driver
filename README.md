@@ -57,4 +57,4 @@ Zephyr driver.
 
 1. Add this repo as a west project.
 2. Snippet `.conf`: `CONFIG_PEROVSAT_AMU=y` and a backend.
-3. Devicetree node with `compatible = "aerospace,amu"`. Put it on I2C/SPI/UART when filling in hardware.
+3. I2C child node with `compatible = "aerospace,amu"` and `reg` (AMULIB default address is `0x0b`).

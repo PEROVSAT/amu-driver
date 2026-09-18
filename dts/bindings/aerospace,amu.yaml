@@ -2,9 +2,7 @@ description: AMU device driver
 
 compatible: "aerospace,amu"
 
-# FILL IN when bringing up hardware, e.g.:
-#   include: i2c-device.yaml
-#   on-bus: i2c
+include: i2c-device.yaml
 
 properties:
   amu-type:

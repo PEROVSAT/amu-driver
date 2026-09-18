@@ -9,6 +9,10 @@
 
 #include <zephyr/device.h>
 
+#if defined(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE)
+	#include <zephyr/drivers/i2c.h>
+#endif
+
 #include <amu.h>
 
 struct amu_dt_config {
@@ -34,8 +38,9 @@ struct amu_dt_config {
 
 struct amu_driver_config {
 	struct amu_dt_config dt;
-
-	/* FILL IN when bringing up hardware, e.g. struct i2c_dt_spec bus; */
+#if defined(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE)
+	struct i2c_dt_spec bus;
+#endif
 };
 
 struct amu_driver_data {

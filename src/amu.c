@@ -133,7 +133,8 @@ static int amu_driver_init(const struct device *dev)
 				.area_ucm2 = DT_INST_PROP_OR(inst, amu_area_ucm2, 0),              \
 				.has_area = DT_INST_NODE_HAS_PROP(inst, amu_area_ucm2),            \
 			},                                                                         \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE,                                   \
+			   (.bus = I2C_DT_SPEC_INST_GET(inst),)) };                                  \
 	DEVICE_DT_INST_DEFINE(inst, amu_driver_init, NULL, &amu_data_##inst, &amu_config_##inst,   \
 			      BOOT_STAGE, BOOT_PRIORITY, NULL);
 
