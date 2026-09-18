@@ -26,6 +26,38 @@ static int amu_wait_for_ready(amu_t *dev, uint16_t interval_ms, uint16_t timeout
 	return -ETIMEDOUT;
 }
 
+static int amu_write_cmd(amu_t *dev, uint8_t cmd)
+{
+	return amu_transfer(dev->bus_ctx, AMU_REG_CMD, &cmd, 1, false);
+}
+
+static int amu_write_transfer_ptr(amu_t *dev, uint8_t *buf, size_t len)
+{
+	return amu_transfer(dev->bus_ctx, AMU_REG_TRANSFER_PTR, buf, len, false);
+}
+
+static int amu_dac_set_state(amu_t *dev, uint8_t enabled)
+{
+	int ret;
+
+	ret = amu_wait_for_ready(dev, 10, 1000);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = amu_write_transfer_ptr(dev, &enabled, sizeof(enabled));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = amu_write_cmd(dev, AMU_CMD_DAC_STATE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return amu_wait_for_ready(dev, 10, 1000);
+}
+
 int amu_get_config(amu_t *dev, amu_config_t *cfg)
 {
 	int ret;
@@ -43,10 +75,9 @@ int amu_get_config(amu_t *dev, amu_config_t *cfg)
 			    sizeof(*cfg), true);
 }
 
-int amu_save_config(amu_t *dev, const amu_config_t *cfg)
+int amu_set_config(amu_t *dev, const amu_config_t *cfg)
 {
 	amu_config_t wire;
-	uint8_t save_cmd;
 	int ret;
 
 	if (dev == NULL || cfg == NULL) {
@@ -59,14 +90,24 @@ int amu_save_config(amu_t *dev, const amu_config_t *cfg)
 	}
 
 	wire = *cfg;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_CONFIG, (uint8_t *)&wire,
-			   sizeof(wire), false);
+	return amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_CONFIG, (uint8_t *)&wire,
+			    sizeof(wire), false);
+}
+
+int amu_save_config(amu_t *dev)
+{
+	int ret;
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	ret = amu_wait_for_ready(dev, 10, 1000);
 	if (ret < 0) {
 		return ret;
 	}
 
-	save_cmd = AMU_CMD_SWEEP_CONFIG_SAVE;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_CMD, &save_cmd, 1, false);
+	ret = amu_write_cmd(dev, AMU_CMD_SWEEP_CONFIG_SAVE);
 	if (ret < 0) {
 		return ret;
 	}
@@ -99,20 +140,18 @@ int amu_init(amu_t *dev)
 
 int amu_set_address(amu_t *dev, uint8_t addr)
 {
-	uint8_t cmd;
 	int ret;
 
 	if (dev == NULL) {
 		return -EINVAL;
 	}
 
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_TRANSFER_PTR, &addr, 1, false);
+	ret = amu_write_transfer_ptr(dev, &addr, sizeof(addr));
 	if (ret < 0) {
 		return ret;
 	}
 
-	cmd = AMU_CMD_SET_ADDRESS;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_CMD, &cmd, 1, false);
+	ret = amu_write_cmd(dev, AMU_CMD_SET_ADDRESS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -122,15 +161,11 @@ int amu_set_address(amu_t *dev, uint8_t addr)
 	return 0;
 }
 
-int amu_do_iv_sweep(amu_t *dev, iv_sweep_t *sweep)
+int amu_trigger_sweep(amu_t *dev)
 {
-	amu_ivsweep_meta_t meta;
-	uint8_t cmd_val;
-	float dac_v;
-	uint8_t dac_state;
 	int ret;
 
-	if (dev == NULL || sweep == NULL) {
+	if (dev == NULL) {
 		return -EINVAL;
 	}
 
@@ -139,68 +174,89 @@ int amu_do_iv_sweep(amu_t *dev, iv_sweep_t *sweep)
 		return ret;
 	}
 
-	cmd_val = AMU_CMD_SWEEP_TRIG_SWEEP;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_CMD, &cmd_val, 1, false);
+	ret = amu_write_cmd(dev, AMU_CMD_SWEEP_TRIG_SWEEP);
 	if (ret < 0) {
 		return ret;
 	}
 
 	amu_delay(10);
 
-	ret = amu_wait_for_ready(dev, 50, 2000);
+	return amu_wait_for_ready(dev, 50, 2000);
+}
+
+int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta)
+{
+	int ret;
+
+	if (dev == NULL || meta == NULL) {
+		return -EINVAL;
+	}
+
+	ret = amu_wait_for_ready(dev, 10, 1000);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_META, (uint8_t *)&meta,
-			   sizeof(meta), true);
+	return amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_META, (uint8_t *)meta,
+			    sizeof(*meta), true);
+}
+
+int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv)
+{
+	int ret;
+
+	if (dev == NULL || iv == NULL) {
+		return -EINVAL;
+	}
+
+	ret = amu_wait_for_ready(dev, 10, 1000);
 	if (ret < 0) {
 		return ret;
 	}
 
-	sweep->tsensor_start = meta.tsensor_start;
-	sweep->tsensor_end = meta.tsensor_end;
-	sweep->time_start = meta.timestamp;
-
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_VOLTAGE, (uint8_t *)sweep->voltage,
-			   sizeof(float) * IV_POINTS, true);
+	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_VOLTAGE, (uint8_t *)iv->voltage,
+			   sizeof(iv->voltage), true);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_CURRENT, (uint8_t *)sweep->current,
-			   sizeof(float) * IV_POINTS, true);
+	return amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_CURRENT, (uint8_t *)iv->current,
+			    sizeof(iv->current), true);
+}
+
+int amu_dac_enable(amu_t *dev, float voltage)
+{
+	int ret;
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	ret = amu_wait_for_ready(dev, 10, 1000);
 	if (ret < 0) {
 		return ret;
 	}
 
-	dac_v = meta.vmax;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_TRANSFER_PTR, (uint8_t *)&dac_v, sizeof(dac_v),
-			   false);
+	ret = amu_write_transfer_ptr(dev, (uint8_t *)&voltage, sizeof(voltage));
 	if (ret < 0) {
 		return ret;
 	}
 
-	cmd_val = AMU_CMD_DAC_VOLTAGE;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_CMD, &cmd_val, 1, false);
+	ret = amu_write_cmd(dev, AMU_CMD_DAC_VOLTAGE);
 	if (ret < 0) {
 		return ret;
 	}
 
 	amu_delay(10);
 
-	dac_state = 1;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_TRANSFER_PTR, &dac_state, sizeof(dac_state),
-			   false);
-	if (ret < 0) {
-		return ret;
+	return amu_dac_set_state(dev, 1);
+}
+
+int amu_dac_disable(amu_t *dev)
+{
+	if (dev == NULL) {
+		return -EINVAL;
 	}
 
-	cmd_val = AMU_CMD_DAC_STATE;
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_CMD, &cmd_val, 1, false);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
+	return amu_dac_set_state(dev, 0);
 }

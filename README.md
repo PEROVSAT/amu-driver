@@ -44,9 +44,9 @@ amu_t *dev = amu_from_dev(DEVICE_DT_GET(DT_ALIAS(amu)));
 From a west workspace that includes this module:
 
 ```bash
-west twister -T tests/unit -p native_sim
-west build -b native_sim amu-driver/samples/repl
-west build -t run
+west twister -T tests/unit -p qemu_cortex_m3
+west build -b rpi_pico2/rp2350a/m33 amu-driver/samples/repl
+west flash -r uf2
 ```
 
 Unit tests compile `lib/` only. Uncomment the example in `tests/unit` and add

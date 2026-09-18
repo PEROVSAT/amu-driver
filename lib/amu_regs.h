@@ -23,18 +23,3 @@
 #define AMU_CMD_SET_ADDRESS       0x03
 #define AMU_CMD_DAC_STATE         0x50
 #define AMU_CMD_DAC_VOLTAGE       0x53
-
-typedef struct __attribute__((packed)) {
-	float voc;
-	float isc;
-	float tsensor_start;
-	float tsensor_end;
-	float ff;
-	float eff;
-	float vmax;
-	float imax;
-	float pmax;
-	float adc;
-	uint32_t timestamp;
-	uint32_t crc;
-} amu_ivsweep_meta_t;

@@ -100,7 +100,12 @@ static int amu_driver_init(const struct device *dev)
 
 	amu_dt_apply_overlay(&on_device, &cfg->dt);
 
-	return amu_save_config(&data->chip, &on_device);
+	ret = amu_set_config(&data->chip, &on_device);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return amu_save_config(&data->chip);
 }
 
 #define AMU_INIT(inst)                                                                             \
