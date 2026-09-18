@@ -17,7 +17,7 @@
 
 static uint8_t hw_rev;
 static uint8_t cmd;
-static amu_ivsweep_config_t sweep_cfg;
+static amu_config_t sweep_cfg;
 
 int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
 {
@@ -65,13 +65,7 @@ void amu_delay(uint32_t ms)
 
 ZTEST(amu_unit, test_init_rejects_null)
 {
-	amu_t dev = {
-		.bus_ctx = (void *)1,
-	};
-	amu_config_t cfg = {0};
-
-	zassert_equal(amu_init(NULL, &cfg), -EINVAL);
-	zassert_equal(amu_init(&dev, NULL), -EINVAL);
+	zassert_equal(amu_init(NULL), -EINVAL);
 }
 
 ZTEST(amu_unit, test_init_rejects_disconnected)
@@ -79,14 +73,13 @@ ZTEST(amu_unit, test_init_rejects_disconnected)
 	amu_t dev = {
 		.bus_ctx = (void *)1,
 	};
-	amu_config_t cfg = {0};
 
 	hw_rev = 0xFF;
 	cmd = 0x00;
-	zassert_equal(amu_init(&dev, &cfg), -ENODEV);
+	zassert_equal(amu_init(&dev), -ENODEV);
 
 	hw_rev = 0x00;
-	zassert_equal(amu_init(&dev, &cfg), -ENODEV);
+	zassert_equal(amu_init(&dev), -ENODEV);
 }
 
 ZTEST(amu_unit, test_init_probes_device)
@@ -94,15 +87,41 @@ ZTEST(amu_unit, test_init_probes_device)
 	amu_t dev = {
 		.bus_ctx = (void *)1,
 	};
-	amu_config_t cfg = {0};
 
 	hw_rev = 0x10;
 	cmd = 0x00;
 	memset(&sweep_cfg, 0, sizeof(sweep_cfg));
 
-	zassert_ok(amu_init(&dev, &cfg));
+	zassert_ok(amu_init(&dev));
 	zassert_equal(dev.hw_rev, 0x10);
-	zassert_equal(sweep_cfg.numPoints, IV_POINTS);
+}
+
+ZTEST(amu_unit, test_get_save_config)
+{
+	amu_t dev = {
+		.bus_ctx = (void *)1,
+	};
+	amu_config_t got = {0};
+	amu_config_t want = {
+		.type = 2,
+		.numPoints = IV_POINTS,
+		.delay = 5,
+		.ratio = 1,
+		.power = 3,
+		.dac_gain = 4,
+		.sweep_averages = 2,
+		.adc_averages = 8,
+		.am0 = 1366.1f,
+		.area = 1.0f,
+	};
+
+	hw_rev = 0x10;
+	cmd = 0x00;
+	memset(&sweep_cfg, 0, sizeof(sweep_cfg));
+
+	zassert_ok(amu_save_config(&dev, &want));
+	zassert_ok(amu_get_config(&dev, &got));
+	zassert_mem_equal(&got, &want, sizeof(want));
 }
 
 ZTEST_SUITE(amu_unit, NULL, NULL, NULL, NULL, NULL);

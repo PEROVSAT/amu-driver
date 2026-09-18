@@ -6,15 +6,29 @@
 #include "amu.h"
 #include "stddef.h"
 
-int amu_init(amu_t *dev, const amu_config_t *cfg)
+int amu_init(amu_t *dev)
 {
 	(void)dev;
-	(void)cfg;
 
 	return 0;
 }
 
-int amu_apply_config(amu_t *dev, const amu_sweep_cfg_t *cfg)
+int amu_get_config(amu_t *dev, amu_config_t *cfg)
+{
+	(void)dev;
+
+	if (cfg == NULL) {
+		return 0;
+	}
+
+	*cfg = (amu_config_t){
+		.numPoints = IV_POINTS,
+	};
+
+	return 0;
+}
+
+int amu_save_config(amu_t *dev, const amu_config_t *cfg)
 {
 	(void)dev;
 	(void)cfg;

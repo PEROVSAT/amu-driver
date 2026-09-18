@@ -26,17 +26,11 @@ static int amu_wait_for_ready(amu_t *dev, uint16_t interval_ms, uint16_t timeout
 	return -ETIMEDOUT;
 }
 
-int amu_apply_config(amu_t *dev, const amu_sweep_cfg_t *cfg)
+int amu_get_config(amu_t *dev, amu_config_t *cfg)
 {
-	amu_ivsweep_config_t wire;
-	uint8_t save_cmd;
 	int ret;
 
-	if (cfg == NULL) {
-		return 0;
-	}
-
-	if (dev == NULL) {
+	if (dev == NULL || cfg == NULL) {
 		return -EINVAL;
 	}
 
@@ -45,42 +39,26 @@ int amu_apply_config(amu_t *dev, const amu_sweep_cfg_t *cfg)
 		return ret;
 	}
 
-	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_CONFIG, (uint8_t *)&wire,
-			   sizeof(wire), true);
+	return amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_CONFIG, (uint8_t *)cfg,
+			    sizeof(*cfg), true);
+}
+
+int amu_save_config(amu_t *dev, const amu_config_t *cfg)
+{
+	amu_config_t wire;
+	uint8_t save_cmd;
+	int ret;
+
+	if (dev == NULL || cfg == NULL) {
+		return -EINVAL;
+	}
+
+	ret = amu_wait_for_ready(dev, 10, 1000);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (cfg->set_type) {
-		wire.type = cfg->type;
-	}
-	if (cfg->set_delay) {
-		wire.delay = cfg->delay;
-	}
-	if (cfg->set_ratio) {
-		wire.ratio = cfg->ratio;
-	}
-	if (cfg->set_power) {
-		wire.power = cfg->power;
-	}
-	if (cfg->set_dac_gain) {
-		wire.dac_gain = cfg->dac_gain;
-	}
-	if (cfg->set_sweep_averages) {
-		wire.sweep_averages = cfg->sweep_averages;
-	}
-	if (cfg->set_adc_averages) {
-		wire.adc_averages = cfg->adc_averages;
-	}
-	if (cfg->set_am0) {
-		wire.am0 = cfg->am0;
-	}
-	if (cfg->set_area) {
-		wire.area = cfg->area;
-	}
-
-	wire.numPoints = IV_POINTS;
-
+	wire = *cfg;
 	ret = amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_SWEEP_CONFIG, (uint8_t *)&wire,
 			   sizeof(wire), false);
 	if (ret < 0) {
@@ -96,13 +74,12 @@ int amu_apply_config(amu_t *dev, const amu_sweep_cfg_t *cfg)
 	return amu_wait_for_ready(dev, 10, 1000);
 }
 
-int amu_init(amu_t *dev, const amu_config_t *cfg)
+int amu_init(amu_t *dev)
 {
-	amu_sweep_cfg_t sweep_cfg;
 	uint8_t hw_rev = 0;
 	int ret;
 
-	if (dev == NULL || cfg == NULL) {
+	if (dev == NULL) {
 		return -EINVAL;
 	}
 
@@ -117,28 +94,7 @@ int amu_init(amu_t *dev, const amu_config_t *cfg)
 
 	dev->hw_rev = hw_rev;
 
-	sweep_cfg = (amu_sweep_cfg_t){
-		.type = cfg->type,
-		.set_type = cfg->has_type,
-		.delay = cfg->delay,
-		.set_delay = cfg->has_delay,
-		.ratio = cfg->ratio,
-		.set_ratio = cfg->has_ratio,
-		.power = cfg->power,
-		.set_power = cfg->has_power,
-		.dac_gain = cfg->dac_gain,
-		.set_dac_gain = cfg->has_dac_gain,
-		.sweep_averages = cfg->sweep_averages,
-		.set_sweep_averages = cfg->has_sweep_averages,
-		.adc_averages = cfg->adc_averages,
-		.set_adc_averages = cfg->has_adc_averages,
-		.am0 = (float)cfg->am0_mw / 1000.0f,
-		.set_am0 = cfg->has_am0,
-		.area = (float)cfg->area_ucm2 / 10000.0f,
-		.set_area = cfg->has_area,
-	};
-
-	return amu_apply_config(dev, &sweep_cfg);
+	return 0;
 }
 
 int amu_set_address(amu_t *dev, uint8_t addr)

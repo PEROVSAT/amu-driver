@@ -11,7 +11,7 @@
 static uint8_t s_cmd;
 static uint8_t s_hw_rev;
 static uint8_t s_transfer_ptr[sizeof(float)];
-static amu_ivsweep_config_t s_sweep_cfg;
+static amu_config_t s_sweep_cfg;
 static amu_ivsweep_meta_t s_meta;
 static float s_voltage[IV_POINTS];
 static float s_current[IV_POINTS];

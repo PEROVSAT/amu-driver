@@ -25,19 +25,6 @@
 #define AMU_CMD_DAC_VOLTAGE       0x53
 
 typedef struct __attribute__((packed)) {
-	uint8_t type;
-	uint8_t numPoints;
-	uint8_t delay;
-	uint8_t ratio;
-	uint8_t power;
-	uint8_t dac_gain;
-	uint8_t sweep_averages;
-	uint8_t adc_averages;
-	float am0;
-	float area;
-} amu_ivsweep_config_t;
-
-typedef struct __attribute__((packed)) {
 	float voc;
 	float isc;
 	float tsensor_start;

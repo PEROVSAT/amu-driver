@@ -11,8 +11,29 @@
 
 #include <amu.h>
 
+struct amu_dt_config {
+	uint8_t type;
+	bool has_type;
+	uint8_t delay;
+	bool has_delay;
+	uint8_t ratio;
+	bool has_ratio;
+	uint8_t power;
+	bool has_power;
+	uint8_t dac_gain;
+	bool has_dac_gain;
+	uint8_t sweep_averages;
+	bool has_sweep_averages;
+	uint8_t adc_averages;
+	bool has_adc_averages;
+	uint32_t am0_mw;
+	bool has_am0;
+	uint32_t area_ucm2;
+	bool has_area;
+};
+
 struct amu_driver_config {
-	amu_config_t chip;
+	struct amu_dt_config dt;
 
 	/* FILL IN when bringing up hardware, e.g. struct i2c_dt_spec bus; */
 };

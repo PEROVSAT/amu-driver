@@ -30,14 +30,52 @@ void amu_delay(uint32_t ms)
 }
 #endif
 
+static bool amu_dt_has_overlay(const struct amu_dt_config *dt)
+{
+	return dt->has_type || dt->has_delay || dt->has_ratio || dt->has_power ||
+	       dt->has_dac_gain || dt->has_sweep_averages || dt->has_adc_averages || dt->has_am0 ||
+	       dt->has_area;
+}
+
+static void amu_dt_apply_overlay(amu_config_t *cfg, const struct amu_dt_config *dt)
+{
+	if (dt->has_type) {
+		cfg->type = dt->type;
+	}
+	if (dt->has_delay) {
+		cfg->delay = dt->delay;
+	}
+	if (dt->has_ratio) {
+		cfg->ratio = dt->ratio;
+	}
+	if (dt->has_power) {
+		cfg->power = dt->power;
+	}
+	if (dt->has_dac_gain) {
+		cfg->dac_gain = dt->dac_gain;
+	}
+	if (dt->has_sweep_averages) {
+		cfg->sweep_averages = dt->sweep_averages;
+	}
+	if (dt->has_adc_averages) {
+		cfg->adc_averages = dt->adc_averages;
+	}
+	if (dt->has_am0) {
+		cfg->am0 = (float)dt->am0_mw / 1000.0f;
+	}
+	if (dt->has_area) {
+		cfg->area = (float)dt->area_ucm2 / 10000.0f;
+	}
+}
+
 static int amu_driver_init(const struct device *dev)
 {
 	struct amu_driver_data *data = dev->data;
 	const struct amu_driver_config *cfg = dev->config;
-
-#if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
+	amu_config_t on_device;
 	int ret;
 
+#if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
 	data->chip.bus_ctx = (void *)dev;
 
 	ret = amu_transfer_init(dev);
@@ -46,13 +84,29 @@ static int amu_driver_init(const struct device *dev)
 	}
 #endif
 
-	return amu_init(&data->chip, &cfg->chip);
+	ret = amu_init(&data->chip);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!amu_dt_has_overlay(&cfg->dt)) {
+		return 0;
+	}
+
+	ret = amu_get_config(&data->chip, &on_device);
+	if (ret < 0) {
+		return ret;
+	}
+
+	amu_dt_apply_overlay(&on_device, &cfg->dt);
+
+	return amu_save_config(&data->chip, &on_device);
 }
 
 #define AMU_INIT(inst)                                                                             \
 	static struct amu_driver_data amu_data_##inst;                                             \
 	static const struct amu_driver_config amu_config_##inst = {                                \
-		.chip =                                                                            \
+		.dt =                                                                              \
 			{                                                                          \
 				.type = DT_INST_PROP_OR(inst, amu_type, 0),                        \
 				.has_type = DT_INST_NODE_HAS_PROP(inst, amu_type),                 \
