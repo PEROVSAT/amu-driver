@@ -54,7 +54,25 @@ static int amu_driver_init(const struct device *dev)
 	static const struct amu_driver_config amu_config_##inst = {                                \
 		.chip =                                                                            \
 			{                                                                          \
-				.unused = 0, /* FILL IN: .foo = DT_INST_PROP(inst, foo), */        \
+				.type = DT_INST_PROP_OR(inst, amu_type, 0),                        \
+				.has_type = DT_INST_NODE_HAS_PROP(inst, amu_type),                 \
+				.delay = DT_INST_PROP_OR(inst, amu_delay, 0),                      \
+				.has_delay = DT_INST_NODE_HAS_PROP(inst, amu_delay),               \
+				.ratio = DT_INST_PROP_OR(inst, amu_ratio, 0),                      \
+				.has_ratio = DT_INST_NODE_HAS_PROP(inst, amu_ratio),               \
+				.power = DT_INST_PROP_OR(inst, amu_power, 0),                      \
+				.has_power = DT_INST_NODE_HAS_PROP(inst, amu_power),               \
+				.dac_gain = DT_INST_PROP_OR(inst, amu_dac_gain, 0),                \
+				.has_dac_gain = DT_INST_NODE_HAS_PROP(inst, amu_dac_gain),         \
+				.sweep_averages = DT_INST_PROP_OR(inst, amu_sweep_averages, 0),    \
+				.has_sweep_averages =                                              \
+					DT_INST_NODE_HAS_PROP(inst, amu_sweep_averages),           \
+				.adc_averages = DT_INST_PROP_OR(inst, amu_adc_averages, 0),        \
+				.has_adc_averages = DT_INST_NODE_HAS_PROP(inst, amu_adc_averages), \
+				.am0_mw = DT_INST_PROP_OR(inst, amu_am0_mw, 0),                    \
+				.has_am0 = DT_INST_NODE_HAS_PROP(inst, amu_am0_mw),                \
+				.area_ucm2 = DT_INST_PROP_OR(inst, amu_area_ucm2, 0),              \
+				.has_area = DT_INST_NODE_HAS_PROP(inst, amu_area_ucm2),            \
 			},                                                                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, amu_driver_init, NULL, &amu_data_##inst, &amu_config_##inst,   \
