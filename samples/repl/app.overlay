@@ -17,6 +17,8 @@
 		compatible = "aerospace,amu";
 		reg = <0x0f>;
 		status = "okay";
+		payload-index = <0>;
+		face = "pos-z";
 	};
 };
 

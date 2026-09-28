@@ -57,4 +57,6 @@ Zephyr driver.
 
 1. Add this repo as a west project.
 2. Snippet `.conf`: `CONFIG_PEROVSAT_AMU=y` and a backend.
-3. I2C child node with `compatible = "aerospace,amu"` and `reg` (AMULIB default address is `0x0b`).
+3. I2C child node with `compatible = "aerospace,amu"`, `reg`, required `payload-index`, and
+   `face` (`pos-z` / `pos-x` from `perovsat-face.yaml`). Enabled AMUs must use contiguous
+   indices `0 .. NUM_AMUS-1` (see `perovsat-app/snippets/amu-hardware/`).

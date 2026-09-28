@@ -1,0 +1,12 @@
+# Shared by every binding that needs to identify a spacecraft face.
+# The enum order defines the internal face bit: enum index N -> BIT(N).
+# Flight C++ must not duplicate these names or assign separate semantic values.
+
+properties:
+  face:
+    type: string
+    required: true
+    enum:
+      - pos-z
+      - pos-x
+    description: Spacecraft face associated with this device.
