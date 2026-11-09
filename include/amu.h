@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "flight/sweep/sweep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +80,7 @@ int amu_set_config(amu_t *dev, const amu_config_t *cfg);
 int amu_save_config(amu_t *dev);
 
 int amu_trigger_sweep(amu_t *dev);
+int amu_get_sweep(amu_t *dev, psp_sweep *sweep);
 int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta);
 int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv);
 
