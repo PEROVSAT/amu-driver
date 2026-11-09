@@ -12,9 +12,9 @@ static uint8_t s_cmd;
 static uint8_t s_hw_rev;
 static uint8_t s_transfer_ptr[sizeof(float)];
 static amu_config_t s_sweep_cfg;
-static amu_sweep_meta_t s_meta;
-static float s_voltage[IV_POINTS];
-static float s_current[IV_POINTS];
+static psp_sweep_metadata s_meta;
+static float s_voltage[PSP_IV_POINTS];
+static float s_current[PSP_IV_POINTS];
 
 struct reg_entry {
 	uint8_t addr;
@@ -83,16 +83,16 @@ int amu_transfer_init(const struct device *dev)
 	s_hw_rev = 0x10;
 	memset(s_transfer_ptr, 0, sizeof(s_transfer_ptr));
 	memset(&s_sweep_cfg, 0, sizeof(s_sweep_cfg));
-	s_sweep_cfg.numPoints = IV_POINTS;
+	s_sweep_cfg.numPoints = PSP_IV_POINTS;
 
 	memset(&s_meta, 0, sizeof(s_meta));
 	s_meta.tsensor_start = 30.0f;
 	s_meta.tsensor_end = 35.0f;
 	s_meta.timestamp = 5000;
 
-	for (i = 0; i < IV_POINTS; i++) {
+	for (i = 0; i < PSP_IV_POINTS; i++) {
 		s_voltage[i] = (float)i * 0.02f;
-		s_current[i] = (float)(IV_POINTS - 1 - i) * 0.0003f;
+		s_current[i] = (float)(PSP_IV_POINTS - 1 - i) * 0.0003f;
 	}
 
 	return 0;

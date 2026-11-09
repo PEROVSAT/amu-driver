@@ -184,7 +184,7 @@ int amu_trigger_sweep(amu_t *dev)
 	return amu_wait_for_ready(dev, 50, 2000);
 }
 
-int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta)
+int amu_get_sweep_meta(amu_t *dev, psp_sweep_metadata *meta)
 {
 	int ret;
 
@@ -201,7 +201,7 @@ int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta)
 			    sizeof(*meta), true);
 }
 
-int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv)
+int amu_get_sweep_iv(amu_t *dev, psp_sweep_points *iv)
 {
 	int ret;
 
@@ -222,6 +222,26 @@ int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv)
 
 	return amu_transfer(dev->bus_ctx, AMU_REG_DATA_PTR_CURRENT, (uint8_t *)iv->current,
 			    sizeof(iv->current), true);
+}
+
+int amu_get_sweep(amu_t *dev, psp_sweep *sweep)
+{
+	int ret;
+
+	if (dev == NULL || sweep == NULL) {
+		return -EINVAL;
+	}
+	ret = amu_get_sweep_meta(dev, &sweep->meta);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = amu_get_sweep_iv(dev, &sweep->iv);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
 }
 
 int amu_dac_enable(amu_t *dev, float voltage)

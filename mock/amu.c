@@ -23,7 +23,7 @@ int amu_get_config(amu_t *dev, amu_config_t *cfg)
 	}
 
 	*cfg = (amu_config_t){
-		.numPoints = IV_POINTS,
+		.numPoints = PSP_IV_POINTS,
 	};
 
 	return 0;
@@ -51,7 +51,7 @@ int amu_trigger_sweep(amu_t *dev)
 	return 0;
 }
 
-int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta)
+int amu_get_sweep_meta(amu_t *dev, psp_sweep_metadata *meta)
 {
 	(void)dev;
 
@@ -59,7 +59,7 @@ int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta)
 		return 0;
 	}
 
-	*meta = (amu_sweep_meta_t){
+	*meta = (psp_sweep_metadata){
 		.tsensor_start = 20.0f,
 		.tsensor_end = 25.0f,
 	};
@@ -67,7 +67,7 @@ int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta)
 	return 0;
 }
 
-int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv)
+int amu_get_sweep_iv(amu_t *dev, psp_sweep_points *iv)
 {
 	int i;
 
@@ -77,12 +77,26 @@ int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv)
 		return 0;
 	}
 
-	for (i = 0; i < IV_POINTS; ++i) {
-		float t = (float)i / (float)(IV_POINTS - 1);
+	for (i = 0; i < PSP_IV_POINTS; ++i) {
+		float t = (float)i / (float)(PSP_IV_POINTS - 1);
 
 		iv->voltage[i] = t * 1.0f;
 		iv->current[i] = t * 0.010f;
 	}
+
+	return 0;
+}
+
+int amu_get_sweep(amu_t *dev, psp_sweep *sweep)
+{
+	(void)dev;
+
+	if (sweep == NULL) {
+		return 0;
+	}
+
+	amu_get_sweep_meta(dev, &sweep->meta);
+	amu_get_sweep_iv(dev, &sweep->iv);
 
 	return 0;
 }

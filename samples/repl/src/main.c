@@ -189,7 +189,7 @@ static int cmd_trigger_sweep(const struct shell *sh, size_t argc, char **argv)
 static int cmd_get_sweep_meta(const struct shell *sh, size_t argc, char **argv)
 {
 	amu_t *dev = sh_amu(sh);
-	amu_sweep_meta_t meta;
+	psp_sweep_metadata meta;
 	int ret;
 
 	ARG_UNUSED(argc);
@@ -222,7 +222,7 @@ static int cmd_get_sweep_meta(const struct shell *sh, size_t argc, char **argv)
 static int cmd_get_sweep_iv(const struct shell *sh, size_t argc, char **argv)
 {
 	amu_t *dev = sh_amu(sh);
-	amu_sweep_iv_t iv;
+	psp_sweep_points iv;
 	int ret;
 	int i;
 
@@ -239,7 +239,7 @@ static int cmd_get_sweep_iv(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "i voltage current");
-	for (i = 0; i < IV_POINTS; i++) {
+	for (i = 0; i < PSP_IV_POINTS; i++) {
 		shell_print(sh, "%d %f %f", i, (double)iv.voltage[i], (double)iv.current[i]);
 	}
 

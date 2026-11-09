@@ -20,9 +20,9 @@ static uint8_t cmd;
 static uint8_t last_cmd;
 static uint8_t transfer_ptr[sizeof(float)];
 static amu_config_t sweep_cfg;
-static amu_sweep_meta_t sweep_meta;
-static float voltage[IV_POINTS];
-static float current[IV_POINTS];
+static psp_sweep_metadata sweep_meta;
+static float voltage[PSP_IV_POINTS];
+static float current[PSP_IV_POINTS];
 
 int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
 {
@@ -158,7 +158,7 @@ ZTEST(amu_unit, test_get_set_save_config)
 	amu_config_t got = {0};
 	amu_config_t want = {
 		.type = 2,
-		.numPoints = IV_POINTS,
+		.numPoints = PSP_IV_POINTS,
 		.delay = 5,
 		.ratio = 1,
 		.power = 3,
@@ -184,8 +184,8 @@ ZTEST(amu_unit, test_get_set_save_config)
 ZTEST(amu_unit, test_sweep_and_dac)
 {
 	amu_t dev = test_dev();
-	amu_sweep_meta_t meta = {0};
-	amu_sweep_iv_t iv = {0};
+	psp_sweep_metadata meta = {0};
+	psp_sweep_points iv = {0};
 	int i;
 
 	cmd = 0x00;
@@ -194,7 +194,7 @@ ZTEST(amu_unit, test_sweep_and_dac)
 	sweep_meta.tsensor_start = 21.0f;
 	sweep_meta.timestamp = 42;
 
-	for (i = 0; i < IV_POINTS; i++) {
+	for (i = 0; i < PSP_IV_POINTS; i++) {
 		voltage[i] = (float)i;
 		current[i] = (float)i * 0.001f;
 	}
@@ -205,10 +205,19 @@ ZTEST(amu_unit, test_sweep_and_dac)
 	zassert_ok(amu_get_sweep_meta(&dev, &meta));
 	zassert_equal(meta.timestamp, 42);
 	zassert_equal(meta.voc, 0.7f);
+	zassert_equal(meta.vmax, 0.55f);
 
 	zassert_ok(amu_get_sweep_iv(&dev, &iv));
 	zassert_mem_equal(iv.voltage, voltage, sizeof(voltage));
 	zassert_mem_equal(iv.current, current, sizeof(current));
+
+	psp_sweep sweep = {0};
+	zassert_ok(amu_get_sweep(&dev, &sweep));
+	zassert_equal(sweep.meta.timestamp, 42);
+	for (i = 0; i < PSP_IV_POINTS; i++) {
+		zassert_equal(sweep.iv.voltage[i], voltage[i]);
+		zassert_equal(sweep.iv.current[i], current[i]);
+	}
 
 	zassert_ok(amu_dac_enable(&dev, 0.55f));
 	zassert_equal(last_cmd, AMU_CMD_DAC_STATE);

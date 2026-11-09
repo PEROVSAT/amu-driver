@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "flight/sweep/sweep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,10 +16,6 @@ extern "C" {
  *
  * Do not edit src/ for API work.
  */
-
-#ifndef IV_POINTS
-	#define IV_POINTS 40
-#endif
 
 /*
  * Sweep config as stored on the AMU. Layout matches the device register
@@ -36,27 +33,6 @@ typedef struct __attribute__((packed)) {
 	float am0;
 	float area;
 } amu_config_t;
-
-/* Sweep metadata register block. Layout matches the device. */
-typedef struct __attribute__((packed)) {
-	float voc;
-	float isc;
-	float tsensor_start;
-	float tsensor_end;
-	float ff;
-	float eff;
-	float vmax;
-	float imax;
-	float pmax;
-	float adc;
-	uint32_t timestamp;
-	uint32_t crc;
-} amu_sweep_meta_t;
-
-typedef struct {
-	float voltage[IV_POINTS];
-	float current[IV_POINTS];
-} amu_sweep_iv_t;
 
 typedef struct amu {
 	/*
@@ -79,8 +55,9 @@ int amu_set_config(amu_t *dev, const amu_config_t *cfg);
 int amu_save_config(amu_t *dev);
 
 int amu_trigger_sweep(amu_t *dev);
-int amu_get_sweep_meta(amu_t *dev, amu_sweep_meta_t *meta);
-int amu_get_sweep_iv(amu_t *dev, amu_sweep_iv_t *iv);
+int amu_get_sweep_meta(amu_t *dev, psp_sweep_metadata *meta);
+int amu_get_sweep_iv(amu_t *dev, psp_sweep_points *iv);
+int amu_get_sweep(amu_t *dev, psp_sweep *sweep);
 
 int amu_dac_enable(amu_t *dev, float voltage);
 int amu_dac_disable(amu_t *dev);
