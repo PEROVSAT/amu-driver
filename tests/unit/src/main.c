@@ -191,7 +191,6 @@ ZTEST(amu_unit, test_sweep_and_dac)
 	cmd = 0x00;
 	sweep_meta.voc = 0.7f;
 	sweep_meta.vmax = 0.55f;
-	sweep_meta.tsensor_start = 21.0f;
 	sweep_meta.timestamp = 42;
 
 	for (i = 0; i < IV_POINTS; i++) {
@@ -201,7 +200,7 @@ ZTEST(amu_unit, test_sweep_and_dac)
 
 	zassert_ok(amu_trigger_sweep(&dev));
 	zassert_equal(last_cmd, AMU_CMD_SWEEP_TRIG_SWEEP);
-
+	// Test the hardware-facing variables
 	zassert_ok(amu_get_sweep_meta(&dev, &meta));
 	zassert_equal(meta.timestamp, 42);
 	zassert_equal(meta.voc, 0.7f);
@@ -217,6 +216,53 @@ ZTEST(amu_unit, test_sweep_and_dac)
 	zassert_ok(amu_dac_disable(&dev));
 	zassert_equal(last_cmd, AMU_CMD_DAC_STATE);
 	zassert_equal(transfer_ptr[0], 0);
+}
+
+ZTEST(amu_unit, test_get_sweep_protocol)
+{
+	amu_t dev = test_dev();
+	psp_sweep sweep = {0};
+	int i;
+
+	cmd = 0x00;
+	sweep_meta.voc = 0.7f;
+	sweep_meta.vmax = 0.55f;
+	sweep_meta.tsensor_start = 21.0f;
+	sweep_meta.tsensor_end = 25.0f;
+	sweep_meta.timestamp = 42;
+	sweep_meta.isc = 0.12f;
+	sweep_meta.ff = 0.75f;
+	sweep_meta.eff = 0.81f;
+	sweep_meta.imax = 0.11f;
+	sweep_meta.pmax = 0.06f;
+	sweep_meta.adc = 123.0f;
+	sweep_meta.crc = 0x12345678;
+
+	for (i = 0; i < PSP_IV_POINTS; i++) {
+		voltage[i] = (float)i;
+		current[i] = (float)i * 0.001f;
+	}
+
+	// Test the protocol-facing variables
+	zassert_ok(amu_get_sweep(&dev, &sweep));
+	zassert_equal(sweep.meta.timestamp, 42);
+	zassert_equal(sweep.meta.voc, 0.7f);
+	zassert_equal(sweep.meta.vmax, 0.55f);
+	zassert_equal(sweep.meta.tsensor_start, 21.0f);
+	zassert_equal(sweep.meta.tsensor_end, 25.0f);
+	zassert_equal(sweep.meta.isc, 0.12f);
+	zassert_equal(sweep.meta.ff, 0.75f);
+	zassert_equal(sweep.meta.eff, 0.81f);
+	zassert_equal(sweep.meta.imax, 0.11f);
+	zassert_equal(sweep.meta.pmax, 0.06f);
+	zassert_equal(sweep.meta.adc, 123.0f);
+	zassert_equal(sweep.meta.crc, 0x12345678);
+
+	// Test the protocol-facing IV variables
+	for (i = 0; i < PSP_IV_POINTS; i++) {
+		zassert_equal(sweep.iv.voltage[i], voltage[i]);
+		zassert_equal(sweep.iv.current[i], current[i]);
+	}
 }
 
 ZTEST(amu_unit, test_set_address)

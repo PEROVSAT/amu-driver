@@ -3,6 +3,7 @@
 #include "amu_regs.h"
 
 #include <errno.h>
+#include <stddef.h>
 
 static int amu_wait_for_ready(amu_t *dev, uint16_t interval_ms, uint16_t timeout_ms)
 {
@@ -157,6 +158,47 @@ int amu_set_address(amu_t *dev, uint8_t addr)
 	}
 
 	(void)amu_wait_for_ready(dev, 10, 1000);
+
+	return 0;
+}
+
+int amu_get_sweep(amu_t *dev, psp_sweep *sweep)
+{
+	amu_sweep_meta_t meta;
+	amu_sweep_iv_t iv;
+	int ret;
+
+	if (dev == NULL || sweep == NULL) {
+		return -EINVAL;
+	}
+	ret = amu_get_sweep_meta(dev, &meta);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = amu_get_sweep_iv(dev, &iv);
+	if (ret < 0) {
+		return ret;
+	}
+	// Hardware metadata -> protocol metadata
+	sweep->meta.voc = meta.voc;
+	sweep->meta.isc = meta.isc;
+	sweep->meta.tsensor_start = meta.tsensor_start;
+	sweep->meta.tsensor_end = meta.tsensor_end;
+	sweep->meta.ff = meta.ff;
+	sweep->meta.eff = meta.eff;
+	sweep->meta.vmax = meta.vmax;
+	sweep->meta.imax = meta.imax;
+	sweep->meta.pmax = meta.pmax;
+	sweep->meta.adc = meta.adc;
+	sweep->meta.timestamp = meta.timestamp;
+	sweep->meta.crc = meta.crc;
+
+	// Hardware IV -> protocol IV
+	for (size_t i = 0; i < PSP_IV_POINTS; i++) {
+		sweep->iv.voltage[i] = iv.voltage[i];
+		sweep->iv.current[i] = iv.current[i];
+	}
 
 	return 0;
 }

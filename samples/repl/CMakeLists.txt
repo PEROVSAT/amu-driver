@@ -5,6 +5,11 @@ set(BOARD_FLASH_RUNNER uf2)
 list(APPEND ZEPHYR_EXTRA_MODULES ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
 project(amu_repl)
+
+zephyr_include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../perovsat-protocol
+)
 
 target_sources(app PRIVATE src/main.c)
