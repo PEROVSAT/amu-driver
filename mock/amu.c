@@ -6,12 +6,23 @@
 #include "amu.h"
 
 #include <stddef.h>
+#include <errno.h>
 
-int amu_init(amu_t *dev)
+int amu_probe(amu_t *dev)
 {
-	(void)dev;
-
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+	dev->hw_rev = 0x10;
 	return 0;
+}
+
+int amu_wait_ready(amu_t *dev, uint32_t timeout_ms, uint32_t poll_interval_ms)
+{
+	if (dev == NULL || (timeout_ms != 0 && poll_interval_ms == 0)) {
+		return -EINVAL;
+	}
+	return amu_probe(dev);
 }
 
 int amu_get_config(amu_t *dev, amu_config_t *cfg)

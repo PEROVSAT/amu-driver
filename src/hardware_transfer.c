@@ -28,7 +28,7 @@ int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("AMU %s: I2C %s failed (reg=0x%02x len=%zu ret=%d)", dev->name,
+		LOG_DBG("AMU %s: I2C %s failed (reg=0x%02x len=%zu ret=%d)", dev->name,
 			read ? "read" : "write", reg, len, ret);
 	}
 

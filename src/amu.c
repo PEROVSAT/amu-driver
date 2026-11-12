@@ -1,5 +1,5 @@
 /*
- * Zephyr packaging: apply DT, bind the bus, call amu_init().
+ * Zephyr packaging: bind the bus and expose explicit DT configuration.
  * Do not add device functions here. See include/amu.h.
  */
 
@@ -11,6 +11,7 @@
 	#include "amu_bus.h"
 #endif
 
+#include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -26,7 +27,22 @@ amu_t *amu_from_dev(const struct device *dev)
 #if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
 void amu_delay(uint32_t ms)
 {
-	k_msleep(ms);
+	#if defined(CONFIG_TIMEOUT_64BIT)
+	k_sleep(K_MSEC(ms));
+	#else
+	/* Keep the tick conversion in range on 32-bit timeout configurations. */
+	while (ms > 0) {
+		uint32_t chunk = MIN(ms, 60000U);
+
+		k_sleep(K_MSEC(chunk));
+		ms -= chunk;
+	}
+	#endif
+}
+
+uint64_t amu_time_ms(void)
+{
+	return (uint64_t)k_uptime_get();
 }
 #endif
 
@@ -68,44 +84,43 @@ static void amu_dt_apply_overlay(amu_config_t *cfg, const struct amu_dt_config *
 	}
 }
 
-static int amu_driver_init(const struct device *dev)
+int amu_apply_dt_config(const struct device *dev)
 {
-	struct amu_driver_data *data = dev->data;
-	const struct amu_driver_config *cfg = dev->config;
+	const struct amu_driver_config *cfg;
+	amu_t *chip;
 	amu_config_t on_device;
 	int ret;
 
-#if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
-	data->chip.bus_ctx = (void *)dev;
-
-	ret = amu_transfer_init(dev);
-	if (ret < 0) {
-		return ret;
+	if (dev == NULL) {
+		return -EINVAL;
 	}
-#endif
-
-	ret = amu_init(&data->chip);
-	if (ret < 0) {
-		return ret;
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
-
+	cfg = dev->config;
+	chip = amu_from_dev(dev);
 	if (!amu_dt_has_overlay(&cfg->dt)) {
 		return 0;
 	}
-
-	ret = amu_get_config(&data->chip, &on_device);
+	ret = amu_get_config(chip, &on_device);
 	if (ret < 0) {
 		return ret;
 	}
-
 	amu_dt_apply_overlay(&on_device, &cfg->dt);
+	return amu_set_config(chip, &on_device);
+}
 
-	ret = amu_set_config(&data->chip, &on_device);
-	if (ret < 0) {
-		return ret;
-	}
+static int amu_driver_init(const struct device *dev)
+{
+#if !defined(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK)
+	struct amu_driver_data *data = dev->data;
 
-	return amu_save_config(&data->chip);
+	data->chip.bus_ctx = (void *)dev;
+	return amu_transfer_init(dev);
+#else
+	ARG_UNUSED(dev);
+	return 0;
+#endif
 }
 
 #define AMU_INIT(inst)                                                                             \

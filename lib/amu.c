@@ -115,7 +115,7 @@ int amu_save_config(amu_t *dev)
 	return amu_wait_for_ready(dev, 10, 1000);
 }
 
-int amu_init(amu_t *dev)
+int amu_probe(amu_t *dev)
 {
 	uint8_t hw_rev = 0;
 	int ret;
@@ -136,6 +136,43 @@ int amu_init(amu_t *dev)
 	dev->hw_rev = hw_rev;
 
 	return 0;
+}
+
+int amu_wait_ready(amu_t *dev, uint32_t timeout_ms, uint32_t poll_interval_ms)
+{
+	uint64_t start;
+
+	if (dev == NULL || (timeout_ms != 0 && poll_interval_ms == 0)) {
+		return -EINVAL;
+	}
+	start = amu_time_ms();
+	for (;;) {
+		uint8_t cmd;
+		int ret = amu_probe(dev);
+
+		if (ret == 0) {
+			ret = amu_transfer(dev->bus_ctx, AMU_REG_CMD, &cmd, 1, true);
+			if (ret == 0 && cmd != 0) {
+				ret = -EBUSY;
+			}
+		}
+		if (ret == 0 || timeout_ms == 0) {
+			return ret;
+		}
+		if (ret != -EBUSY && ret != -EIO && ret != -ENXIO && ret != -ENODEV &&
+		    ret != -ETIMEDOUT) {
+			return ret;
+		}
+		uint64_t elapsed = amu_time_ms() - start;
+		if (elapsed >= timeout_ms) {
+			return -ETIMEDOUT;
+		}
+		uint32_t remaining = timeout_ms - (uint32_t)elapsed;
+		amu_delay(poll_interval_ms < remaining ? poll_interval_ms : remaining);
+		if (amu_time_ms() - start >= timeout_ms) {
+			return -ETIMEDOUT;
+		}
+	}
 }
 
 int amu_set_address(amu_t *dev, uint8_t addr)

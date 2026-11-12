@@ -48,7 +48,9 @@ typedef struct amu {
 	uint8_t hw_rev;
 } amu_t;
 
-int amu_init(amu_t *dev);
+/* Probe reads the revision once. The caller controls target power. */
+int amu_probe(amu_t *dev);
+int amu_wait_ready(amu_t *dev, uint32_t timeout_ms, uint32_t poll_interval_ms);
 
 int amu_get_config(amu_t *dev, amu_config_t *cfg);
 int amu_set_config(amu_t *dev, const amu_config_t *cfg);
@@ -67,6 +69,8 @@ int amu_set_address(amu_t *dev, uint8_t addr);
 /* App glue: Zephyr `struct device` → this object. Implemented in src/. */
 struct device;
 amu_t *amu_from_dev(const struct device *dev);
+/* Supply a ready Zephyr AMU device; apply DT overrides without saving. */
+int amu_apply_dt_config(const struct device *dev);
 
 #ifdef __cplusplus
 }

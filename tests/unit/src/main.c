@@ -15,6 +15,28 @@
 #include "amu_bus.h"
 #include "amu_regs.h"
 
+struct step {
+	uint8_t reg;
+	int ret;
+	uint8_t value;
+	uint32_t duration;
+};
+static const struct step *script;
+static size_t script_len, script_pos;
+static uint64_t now_ms;
+static uint32_t last_delay;
+static unsigned int writes;
+
+static void set_script(const struct step *steps, size_t count)
+{
+	script = steps;
+	script_len = count;
+	script_pos = 0;
+	now_ms = 0;
+	last_delay = 0;
+	writes = 0;
+}
+
 static uint8_t hw_rev;
 static uint8_t cmd;
 static uint8_t last_cmd;
@@ -27,6 +49,20 @@ static float current[PSP_IV_POINTS];
 int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
 {
 	ARG_UNUSED(ctx);
+	if (!read) {
+		writes++;
+	}
+	if (script != NULL) {
+		zassert_true(script_pos < script_len, "unexpected transfer");
+		const struct step *step = &script[script_pos++];
+		zassert_equal(reg, step->reg);
+		zassert_true(read);
+		now_ms += step->duration;
+		if (step->ret == 0) {
+			*buf = step->value;
+		}
+		return step->ret;
+	}
 
 	if (reg == AMU_REG_CMD) {
 		if (len != 1) {
@@ -114,7 +150,13 @@ int amu_transfer(void *ctx, uint8_t reg, uint8_t *buf, size_t len, bool read)
 
 void amu_delay(uint32_t ms)
 {
-	ARG_UNUSED(ms);
+	last_delay = ms;
+	now_ms += ms;
+}
+
+uint64_t amu_time_ms(void)
+{
+	return now_ms;
 }
 
 static amu_t test_dev(void)
@@ -124,32 +166,95 @@ static amu_t test_dev(void)
 	};
 }
 
-ZTEST(amu_unit, test_init_rejects_null)
+ZTEST(amu_unit, test_probe_rejects_null)
 {
-	zassert_equal(amu_init(NULL), -EINVAL);
+	zassert_equal(amu_probe(NULL), -EINVAL);
 }
 
-ZTEST(amu_unit, test_init_rejects_disconnected)
+ZTEST(amu_unit, test_probe_rejects_disconnected)
 {
 	amu_t dev = test_dev();
 
 	hw_rev = 0xFF;
 	cmd = 0x00;
-	zassert_equal(amu_init(&dev), -ENODEV);
+	zassert_equal(amu_probe(&dev), -ENODEV);
 
 	hw_rev = 0x00;
-	zassert_equal(amu_init(&dev), -ENODEV);
+	zassert_equal(amu_probe(&dev), -ENODEV);
 }
 
-ZTEST(amu_unit, test_init_probes_device)
+ZTEST(amu_unit, test_probe_probes_device)
 {
 	amu_t dev = test_dev();
 
 	hw_rev = 0x10;
 	cmd = 0x00;
 
-	zassert_ok(amu_init(&dev));
+	zassert_ok(amu_probe(&dev));
 	zassert_equal(dev.hw_rev, 0x10);
+}
+
+ZTEST(amu_unit, test_wait_ready_retries_and_reuses_device)
+{
+	amu_t dev = test_dev();
+	const struct step steps[] = {
+		{AMU_REG_SYSTEM_HARDWARE_REVISION, -ETIMEDOUT, 0, 100},
+		{AMU_REG_SYSTEM_HARDWARE_REVISION, -EIO, 0, 1},
+		{AMU_REG_SYSTEM_HARDWARE_REVISION, 0, 0x10, 1},
+		{AMU_REG_CMD, 0, 1, 1},
+		{AMU_REG_SYSTEM_HARDWARE_REVISION, 0, 0x11, 1},
+		{AMU_REG_CMD, 0, 0, 1},
+	};
+	set_script(steps, ARRAY_SIZE(steps));
+	zassert_ok(amu_wait_ready(&dev, 10000, 100));
+	zassert_equal(script_pos, ARRAY_SIZE(steps));
+	zassert_equal(dev.hw_rev, 0x11);
+	zassert_equal(writes, 0);
+	/* A later operation fails once without implicitly retrying or writing. */
+	const struct step lost[] = {{AMU_REG_CMD, -EIO, 0, 0}};
+	psp_sweep_metadata meta = {0};
+	set_script(lost, ARRAY_SIZE(lost));
+	zassert_equal(amu_get_sweep_meta(&dev, &meta), -EIO);
+	zassert_equal(script_pos, 1);
+	zassert_equal(writes, 0);
+
+	set_script(steps, ARRAY_SIZE(steps));
+	zassert_ok(amu_wait_ready(&dev, 10000, 100));
+	zassert_equal(writes, 0);
+	script = NULL;
+	cmd = 0;
+	sweep_meta.timestamp = 42;
+	zassert_ok(amu_get_sweep_meta(&dev, &meta));
+	zassert_equal(meta.timestamp, 42);
+}
+
+ZTEST(amu_unit, test_wait_ready_deadline_and_immediate)
+{
+	amu_t dev = test_dev();
+	const struct step slow[] = {{AMU_REG_SYSTEM_HARDWARE_REVISION, -ETIMEDOUT, 0, 7}};
+	set_script(slow, ARRAY_SIZE(slow));
+	zassert_equal(amu_wait_ready(&dev, 10, 20), -ETIMEDOUT);
+	zassert_equal(last_delay, 3);
+	zassert_equal(now_ms, 10);
+	zassert_equal(script_pos, 1);
+	set_script(slow, ARRAY_SIZE(slow));
+	zassert_equal(amu_wait_ready(&dev, 5, 1), -ETIMEDOUT);
+	zassert_equal(last_delay, 0);
+	set_script(slow, ARRAY_SIZE(slow));
+	zassert_equal(amu_wait_ready(&dev, 0, 0), -ETIMEDOUT);
+	zassert_equal(last_delay, 0);
+	const struct step busy[] = {
+		{AMU_REG_SYSTEM_HARDWARE_REVISION, 0, 1, 0},
+		{AMU_REG_CMD, 0, 1, 0},
+	};
+	set_script(busy, ARRAY_SIZE(busy));
+	zassert_equal(amu_wait_ready(&dev, 0, 0), -EBUSY);
+	zassert_equal(amu_wait_ready(NULL, 1, 1), -EINVAL);
+	zassert_equal(amu_wait_ready(&dev, 1, 0), -EINVAL);
+	const struct step bad[] = {{AMU_REG_SYSTEM_HARDWARE_REVISION, -EINVAL, 0, 0}};
+	set_script(bad, ARRAY_SIZE(bad));
+	zassert_equal(amu_wait_ready(&dev, 50, 1), -EINVAL);
+	script = NULL;
 }
 
 ZTEST(amu_unit, test_get_set_save_config)
@@ -238,4 +343,10 @@ ZTEST(amu_unit, test_set_address)
 	zassert_equal(transfer_ptr[0], 0x42);
 }
 
-ZTEST_SUITE(amu_unit, NULL, NULL, NULL, NULL, NULL);
+static void reset_script(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	set_script(NULL, 0);
+}
+
+ZTEST_SUITE(amu_unit, NULL, NULL, reset_script, NULL, NULL);

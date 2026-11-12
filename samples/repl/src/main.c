@@ -56,6 +56,72 @@ static int parse_u8(const char *s, uint8_t *out)
 	return 0;
 }
 
+static int parse_u32(const char *s, uint32_t *out)
+{
+	char *end;
+	unsigned long v;
+
+	if (s[0] < '0' || s[0] > '9') {
+		return -EINVAL;
+	}
+	errno = 0;
+	v = strtoul(s, &end, 0);
+	if (errno == ERANGE || *end != '\0' || v > UINT32_MAX) {
+		return -EINVAL;
+	}
+	*out = (uint32_t)v;
+	return 0;
+}
+
+static int cmd_probe(const struct shell *sh, size_t argc, char **argv)
+{
+	amu_t *dev = sh_amu(sh);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	int ret = amu_probe(dev);
+	if (ret == 0) {
+		shell_print(sh, "AMU revision: %u", dev->hw_rev);
+	}
+	return sh_ret(sh, ret);
+}
+
+static int cmd_wait_ready(const struct shell *sh, size_t argc, char **argv)
+{
+	amu_t *dev = sh_amu(sh);
+	uint32_t timeout_ms, poll_interval_ms;
+
+	ARG_UNUSED(argc);
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	if (parse_u32(argv[1], &timeout_ms) < 0 || parse_u32(argv[2], &poll_interval_ms) < 0 ||
+	    (timeout_ms != 0 && poll_interval_ms == 0)) {
+		shell_error(sh, "invalid timeout or poll interval");
+		return -EINVAL;
+	}
+	int ret = amu_wait_ready(dev, timeout_ms, poll_interval_ms);
+	if (ret == 0) {
+		shell_print(sh, "AMU ready");
+	}
+	return sh_ret(sh, ret);
+}
+
+static int cmd_apply_dt_config(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *zdev = DEVICE_DT_GET(DT_ALIAS(amu));
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	if (sh_amu(sh) == NULL) {
+		return -ENODEV;
+	}
+	return sh_ret(sh, amu_apply_dt_config(zdev));
+}
+
 static int parse_float(const char *s, float *out)
 {
 	char *end;
@@ -303,7 +369,12 @@ static int cmd_set_address(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	amu_cmds, SHELL_CMD_ARG(get_config, NULL, "Read sweep config", cmd_get_config, 1, 0),
+	amu_cmds, SHELL_CMD_ARG(probe, NULL, "Probe the AMU", cmd_probe, 1, 0),
+	SHELL_CMD_ARG(wait_ready, NULL, "Wait for idle: <timeout_ms> <poll_interval_ms>",
+		      cmd_wait_ready, 3, 0),
+	SHELL_CMD_ARG(apply_dt_config, NULL, "Apply DT configuration overrides",
+		      cmd_apply_dt_config, 1, 0),
+	SHELL_CMD_ARG(get_config, NULL, "Read sweep config", cmd_get_config, 1, 0),
 	SHELL_CMD_ARG(set_config, NULL,
 		      "Set one config field: <field> <value>\n"
 		      "fields: type numPoints delay ratio power dac_gain "

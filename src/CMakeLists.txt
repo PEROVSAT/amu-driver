@@ -9,7 +9,7 @@ zephyr_library_sources(amu.c)
 zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_HARDWARE hardware_transfer.c)
 zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_LIBRARY_MOCK lib_mock_transfer.c)
 
-# Device API: mock xor library, same symbols (amu_init, …).
+# Device API: mock xor library, same symbols (amu_probe, …).
 zephyr_library_sources_ifdef(CONFIG_PEROVSAT_AMU_BACKEND_PUBLIC_MOCK
 			     ${ZEPHYR_CURRENT_MODULE_DIR}/mock/amu.c)
 
